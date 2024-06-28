@@ -1,22 +1,23 @@
 import tkinter as tk
 import random
 
+from legend import Legend
+
+
 class BattleshipGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Battleship Game")
-        
+
         self.boardSize = 10
         self.cellSize = 30
 
         self.playerBoard = []
         self.opponentBoard = []
 
-        self.ships = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
-        self.current_ship_index = 0  # Index to track the current ship being placed
-        self.current_ship = self.ships[self.current_ship_index]
-        self.ship_direction = "horizontal"  # Initial placement direction
-        
+
+        self.current_turn = "Player"
+
         self.createBoard("Opponent", 0, "lightcoral")
         self.createBoard("Player", self.boardSize * self.cellSize + 60, "lightblue")
         
@@ -35,6 +36,9 @@ class BattleshipGame:
 
         # Game Phase (False = placement phase, true = gameplay phase)
         self.gamePhase = False
+
+        self.legend = Legend(self.root, x_offset=2)
+
     def createBoard(self, label, xOffset, color):
         boardFrame = tk.Frame(self.root, bg=color)
         boardFrame.grid(row=0, column=xOffset // self.cellSize, padx=10, pady=10)
@@ -61,12 +65,14 @@ class BattleshipGame:
                     fill="white"
                 )
 
-                canvas.bind("<Button-1>", lambda event, r=row, c=col: self.cellClicked(r, c, label))
+
+                canvas.bind("<Button-1>", lambda event, r=row, c=col: self.cellClicked(r, c, boardFrame))
                 rowCells.append(canvas)
             if label == "Player":
                 self.playerBoard.append(rowCells)
             else:
                 self.opponentBoard.append(rowCells)
+
 
     def cellClicked(self, row, col, board_label):
         if self.gamePhase == False:
@@ -158,6 +164,18 @@ class BattleshipGame:
         else:
             # Miss
             self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="blue")
+
+#     def cellClicked(self, row, col, board):
+#         cell = board.grid_slaves(row=row + 2, column=col + 1)[0]
+#         canvas = cell.winfo_children()[0]
+#         canvas.create_rectangle(0, 0, self.cellSize, self.cellSize, fill="red")
+#         cell.unbind("<Button-1>")
+#         self.switch_turn()
+
+    def switch_turn(self):
+        self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"
+        self.legend.update_turn(self.current_turn)
+
 
 if __name__ == "__main__":
     root = tk.Tk()

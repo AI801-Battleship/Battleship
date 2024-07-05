@@ -34,13 +34,15 @@ class BattleshipGame:
         # Lists to store locations of player and enemy ships
         self.player_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
         self.enemy_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
-
+        self.enemy_ship_count = 17
+        self.player_ship_count = 17
         # Place enemy ships - currently just set to randomly place them
         self.place_enemy_ships()
 
         # Game Phase (False = placement phase, true = gameplay phase)
         self.gamePhase = False
-
+        
+        
         self.legend = Legend(self.root, x_offset=2)
 
     def createBoard(self, label, xOffset, color):
@@ -135,7 +137,7 @@ class BattleshipGame:
             self.current_ship_label.config(text='Currently Placing: ' + self.current_ship)
         else:
             self.current_ship_index = None
-            self.current_ship_label.config(text='All Ships Placed!')
+            self.current_ship_label.config(text="All Ships Placed!")
             self.gamePhase = True
 
     def change_direction(self):
@@ -161,17 +163,58 @@ class BattleshipGame:
 
 
     def fire_shot(self, row, col):
-        # Placeholder for firing shot logic
-        if self.enemy_ships[row][col]:
-            # Hit
-            self.opponentBoard[row][col].create_text(self.cellSize // 2, self.cellSize // 2, text="X")
-        else:
-            # Miss
-            self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="blue")
+        if self.current_turn == "Player":
+            if self.enemy_ships[row][col]:
+                self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
+                self.enemy_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
+                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.getBoardLabel(row, col)}")
+                # Decrease opponent's ship count
+                self.enemy_ship_count -= 1
 
+                # Check if opponent has no ships left
+                if self.enemy_ship_count == 0:
+                    self.display_winner("Player")
+            else:
+                self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="white")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.switch_turn()
+
+        else:
+            if self.player_ships[row][col]:
+                self.playerBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
+                self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
+                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.getBoardLabel(row, col)}")
+                # Decrease player's ship count
+                self.player_ship_count -= 1
+
+                # Check if player has no ships left
+                if self.player_ship_count == 0:
+                    self.display_winner("Opponent")
+            else:
+                self.playerBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="white")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.switch_turn()
+
+    def getBoardLabel(self, row, col):
+        label_row = chr(65 + row)
+        label_col = str(col + 1)
+        return f"{label_row}{label_col}"
+        
     def switch_turn(self):
         self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"
         self.legend.update_turn(self.current_turn)
+        if self.current_turn == "Opponent":
+            #Placeholder ai Logic
+            row = random.randint(0, self.boardSize - 1)
+            col = random.randint(0, self.boardSize - 1)
+            self.fire_shot(row, col)
+    def display_winner(self, winner):
+        # Disable further gameplay
+        self.gamePhase = None
+
+        # Display winner message
+        winner_label = tk.Label(self.root, text=f"{winner} wins!", font=("Helvetica", 24), fg="green")
+        winner_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
 
 if __name__ == "__main__":

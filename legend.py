@@ -9,17 +9,18 @@ class Legend:
         self.create_legend()
 
     def create_legend(self):
-        legend_frame = tk.Frame(self.root, bg="white", width=300, height=200)
+        legend_frame = tk.Frame(self.root, bg="white", width=125, height=225)
         legend_frame.grid(row=self.y_offset, column=self.x_offset, padx=10, pady=10, sticky='n')
-        # legend_frame.grid_propagate(False)
+        legend_frame.grid_propagate(False)
 
         tk.Label(legend_frame, text="Legend", bg="white", font=('Arial', 12, 'bold')).grid(row=0, column=0,
                                                                                            columnspan=2, pady=5)
 
         legend_items = [
-            ("Ship", "black"),
+            ("Ship", "gray"),
             ("Hit", "red"),
-            ("Miss", "white")
+            ("Miss", "white"),
+            ("Sink", "blue")
         ]
 
         for i, (text, color) in enumerate(legend_items, start=1):

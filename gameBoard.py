@@ -10,77 +10,87 @@ class BattleshipGame:
         self.root = root
         self.root.title("Battleship Game")
 
-        self.boardSize = 10
-        self.cellSize = 30
+        self.board_size = 10
+        self.cell_size = 30
 
-        self.playerBoard = []
-        self.opponentBoard = []
+        self.player_board = []
+        self.opponent_board = []
 
         self.current_turn = "Player"
 
-        self.createBoard("Opponent", 0, "lightcoral")
-        self.createBoard("Player", self.boardSize * self.cellSize + 60, "lightblue")
+        self.create_board("Opponent", 0, "lightcoral")
+        self.create_board("Player", self.board_size * self.cell_size + 60, "lightblue")
 
         self.ships = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
         self.current_ship_index = 0  # Index to track the current ship being placed
         self.current_ship = self.ships[self.current_ship_index]
         self.current_ship_label = tk.Label(root, text='Currently Placing: ' + self.current_ship)
-        self.current_ship_label.grid(row=self.boardSize + 2, column=0, columnspan=self.boardSize + 1, pady=10)
-
-        self.ship_direction = 'horizontal'
-        self.direction_button = tk.Button(root, text='Current Direction: ' + self.ship_direction, command=self.change_direction)
-        self.direction_button.grid(row=self.boardSize + 2, column=self.boardSize + 2, pady=10)
+        self.current_ship_label.grid(row=self.board_size + 2, column=0, columnspan=self.board_size + 1, pady=10)
 
         # Lists to store locations of player and enemy ships
-        self.player_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
-        self.enemy_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
+        self.player_ships = [[False]*self.board_size for _ in range(self.board_size)]
+        self.enemy_ships = [[False]*self.board_size for _ in range(self.board_size)]
         self.enemy_ship_count = 17
         self.player_ship_count = 17
+
+        # Store ships' remaining hits
+        self.player_ship_hits = {}
+        self.enemy_ship_hits = {}
+
         # Place enemy ships - currently just set to randomly place them
         self.place_enemy_ships()
 
+        # Add direction button so user knows which way ship will be placed
+        self.ship_direction = 'horizontal'
+        self.direction_button = tk.Button(root, text='Current Direction: ' + self.ship_direction, command=self.change_direction)
+        self.direction_button.grid(row=self.board_size + 2, column=self.board_size + 2, pady=10)
+
+        # Add label when a ship is sunk
+        self.ship_sunk_label = tk.Label(root, text='')
+        self.ship_sunk_label.grid(row=self.board_size + 2, column=1, columnspan=4, pady=10)
+
         # Game Phase (False = placement phase, true = gameplay phase)
-        self.gamePhase = False
+        self.game_phase = False
         
         
         self.legend = Legend(self.root, x_offset=2)
 
-    def createBoard(self, label, xOffset, color):
-        boardFrame = tk.Frame(self.root, bg=color)
-        boardFrame.grid(row=0, column=xOffset // self.cellSize, padx=10, pady=10)
-        tk.Label(boardFrame, text=label, bg=color).grid(row=0, columnspan=self.boardSize + 1)
+    def create_board(self, label, x_offset, color):
+        board_frame = tk.Frame(self.root, bg=color)
+        board_frame.grid(row=0, column=x_offset // self.cell_size, padx=10, pady=10)
+        tk.Label(board_frame, text=label, bg=color).grid(row=0, columnspan=self.board_size + 1)
 
-        for col in range(self.boardSize):
-            tk.Label(boardFrame, text=str(col + 1), bg=color).grid(row=1, column=col + 1)
+        for col in range(self.board_size):
+            tk.Label(board_frame, text=str(col + 1), bg=color).grid(row=1, column=col + 1)
 
-        for row in range(self.boardSize):
-            tk.Label(boardFrame, text=chr(65 + row), bg=color).grid(row=row + 2, column=0)
-            rowCells = []
-            for col in range(self.boardSize):
-                cellFrame = tk.Frame(boardFrame, width=self.cellSize, height=self.cellSize, bg=color,
+        for row in range(self.board_size):
+            tk.Label(board_frame, text=chr(65 + row), bg=color).grid(row=row + 2, column=0)
+            row_cells = []
+            for col in range(self.board_size):
+                cell_frame = tk.Frame(board_frame, width=self.cell_size, height=self.cell_size, bg=color,
                                      highlightbackground="black", highlightthickness=1)
-                cellFrame.grid_propagate(False)
-                cellFrame.grid(row=row + 2, column=col + 1)
+                cell_frame.grid_propagate(False)
+                cell_frame.grid(row=row + 2, column=col + 1)
 
-                canvas = tk.Canvas(cellFrame, width=self.cellSize, height=self.cellSize, bg=color)
+                canvas = tk.Canvas(cell_frame, width=self.cell_size, height=self.cell_size, bg=color)
                 canvas.pack()
-                dotRadius = 2
+                dot_radius = 2
                 canvas.create_oval(
-                    (self.cellSize - dotRadius) / 2, (self.cellSize - dotRadius) / 2,
-                    (self.cellSize + dotRadius) / 2, (self.cellSize + dotRadius) / 2,
+                    (self.cell_size - dot_radius) / 2, (self.cell_size - dot_radius) / 2,
+                    (self.cell_size + dot_radius) / 2, (self.cell_size + dot_radius) / 2,
                     fill="white"
                 )
 
                 # Use functools.partial to bind the event with specific row, col, and board label
                 canvas.bind("<Button-1>", partial(self.cellClicked, row, col, label))
-                rowCells.append(canvas)
+                row_cells.append(canvas)
             if label == "Player":
-                self.playerBoard.append(rowCells)
+                self.player_board.append(row_cells)
             else:
-                self.opponentBoard.append(rowCells)
+                self.opponent_board.append(row_cells)
 
     def cellClicked(self, row, col, board_label, event):
-        if self.gamePhase == False:
+        if self.game_phase == False:
             # Placement phase logic
             if board_label == "Player":
                 ship_size = self.get_ship_size(self.current_ship)
@@ -108,11 +118,11 @@ class BattleshipGame:
         board = self.player_ships if is_player else self.enemy_ships
         if self.current_ship_index is not None:
             if self.ship_direction == "horizontal":
-                if col + ship_size > self.boardSize:
+                if col + ship_size > self.board_size:
                     return False
                 return all(not board[row][col + i] for i in range(ship_size))
             else:  # vertical
-                if row + ship_size > self.boardSize:
+                if row + ship_size > self.board_size:
                     return False
                 return all(not board[row + i][col] for i in range(ship_size))
         return False
@@ -121,12 +131,13 @@ class BattleshipGame:
         # Place the ship on the player's board
         if self.ship_direction == "horizontal":
             for i in range(ship_size):
-                self.playerBoard[row][col + i].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="gray")
-                self.player_ships[row][col + i] = True
+                self.player_board[row][col + i].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="gray")
+                self.player_ships[row][col + i] = self.current_ship
         else:  # vertical
             for i in range(ship_size):
-                self.playerBoard[row + i][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="gray")
-                self.player_ships[row + i][col] = True
+                self.player_board[row + i][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="gray")
+                self.player_ships[row + i][col] = self.current_ship
+        self.player_ship_hits[self.current_ship] = ship_size
         self.cycle_ship()
 
     def cycle_ship(self):
@@ -138,7 +149,7 @@ class BattleshipGame:
         else:
             self.current_ship_index = None
             self.current_ship_label.config(text="All Ships Placed!")
-            self.gamePhase = True
+            self.game_phase = True
 
     def change_direction(self):
         self.ship_direction = "vertical" if self.ship_direction == "horizontal" else "horizontal"
@@ -149,53 +160,72 @@ class BattleshipGame:
             ship_size = self.get_ship_size(ship_name)
             placed = False
             while not placed:
-                row = random.randint(0, self.boardSize - 1)
-                col = random.randint(0, self.boardSize - 1)
-                direction = random.choice(["horizontal", "vertical"])
+                row = random.randint(0, self.board_size - 1)
+                col = random.randint(0, self.board_size - 1)
+                self.ship_direction = random.choice(["horizontal", "vertical"])
                 if self.can_place_ship(row, col, ship_size, is_player=False):
-                    if direction == "horizontal" and col + ship_size <= self.boardSize:
+                    if self.ship_direction == "horizontal" and col + ship_size <= self.board_size:
                         for i in range(ship_size):
-                            self.enemy_ships[row][col + i] = True
-                    elif direction == "vertical" and row + ship_size <= self.boardSize:
+                            self.enemy_ships[row][col + i] = ship_name
+                    elif self.ship_direction == "vertical" and row + ship_size <= self.board_size:
                         for i in range(ship_size):
-                            self.enemy_ships[row + i][col] = True
+                            self.enemy_ships[row + i][col] = ship_name
+                    self.enemy_ship_hits[ship_name] = ship_size
                     placed = True
 
 
     def fire_shot(self, row, col):
+        self.ship_sunk_label.config(text='')
         if self.current_turn == "Player":
             if self.enemy_ships[row][col]:
-                self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
-                self.enemy_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
-                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.getBoardLabel(row, col)}")
+                self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
+                # self.enemy_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
+                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
                 # Decrease opponent's ship count
                 self.enemy_ship_count -= 1
+
+                # Check if ship was sunk
+                self.enemy_ship_hits[self.enemy_ships[row][col]] -= 1
+                if self.enemy_ship_hits[self.enemy_ships[row][col]] == 0:
+                    self.sink_ship(self.enemy_ships[row][col], self.opponent_board, self.enemy_ships)
 
                 # Check if opponent has no ships left
                 if self.enemy_ship_count == 0:
                     self.display_winner("Player")
             else:
-                self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
         else:
             if self.player_ships[row][col]:
-                self.playerBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
-                self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
-                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.getBoardLabel(row, col)}")
+                self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
+                #self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
+                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
                 # Decrease player's ship count
                 self.player_ship_count -= 1
+
+                # Check if ship was sunk
+                self.player_ship_hits[self.player_ships[row][col]] -= 1
+                if self.player_ship_hits[self.player_ships[row][col]] == 0:
+                    self.sink_ship(self.player_ships[row][col], self.player_board, self.player_ships)
 
                 # Check if player has no ships left
                 if self.player_ship_count == 0:
                     self.display_winner("Opponent")
             else:
-                self.playerBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
-    def getBoardLabel(self, row, col):
+    def sink_ship(self, ship_id, board, ships):
+        for row in range(self.board_size):
+            for col in range(self.board_size):
+                if ships[row][col] == ship_id:
+                    board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="blue")
+        self.ship_sunk_label.config(text=ship_id + ' sunk!')
+
+    def get_board_label(self, row, col):
         label_row = chr(65 + row)
         label_col = str(col + 1)
         return f"{label_row}{label_col}"
@@ -205,12 +235,12 @@ class BattleshipGame:
         self.legend.update_turn(self.current_turn)
         if self.current_turn == "Opponent":
             #Placeholder ai Logic
-            row = random.randint(0, self.boardSize - 1)
-            col = random.randint(0, self.boardSize - 1)
+            row = random.randint(0, self.board_size - 1)
+            col = random.randint(0, self.board_size - 1)
             self.fire_shot(row, col)
     def display_winner(self, winner):
         # Disable further gameplay
-        self.gamePhase = None
+        self.game_phase = None
 
         # Display winner message
         winner_label = tk.Label(self.root, text=f"{winner} wins!", font=("Helvetica", 24), fg="green")

@@ -32,3 +32,4 @@ class Legend:
 
     def update_turn(self, turn):
         self.turn_label.config(text="Turn: " + turn)
+# adding comment for test commit

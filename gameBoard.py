@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+from functools import partial  # Import functools.partial
 
 from legend import Legend
 
@@ -14,7 +15,6 @@ class BattleshipGame:
 
         self.playerBoard = []
         self.opponentBoard = []
-
 
         self.current_turn = "Player"
 
@@ -31,11 +31,11 @@ class BattleshipGame:
         self.direction_button = tk.Button(root, text='Current Direction: ' + self.ship_direction, command=self.change_direction)
         self.direction_button.grid(row=self.boardSize + 2, column=self.boardSize + 2, pady=10)
 
-        #Lists to store locations of player and enemy ships
+        # Lists to store locations of player and enemy ships
         self.player_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
         self.enemy_ships = [[False]*self.boardSize for _ in range(self.boardSize)]
 
-        #Place enemy ships - currently just set to randomly place them
+        # Place enemy ships - currently just set to randomly place them
         self.place_enemy_ships()
 
         # Game Phase (False = placement phase, true = gameplay phase)
@@ -69,16 +69,15 @@ class BattleshipGame:
                     fill="white"
                 )
 
-
-                canvas.bind("<Button-1>", lambda event, r=row, c=col: self.cellClicked(r, c, boardFrame))
+                # Use functools.partial to bind the event with specific row, col, and board label
+                canvas.bind("<Button-1>", partial(self.cellClicked, row, col, label))
                 rowCells.append(canvas)
             if label == "Player":
                 self.playerBoard.append(rowCells)
             else:
                 self.opponentBoard.append(rowCells)
 
-
-    def cellClicked(self, row, col, board_label):
+    def cellClicked(self, row, col, board_label, event):
         if self.gamePhase == False:
             # Placement phase logic
             if board_label == "Player":
@@ -127,7 +126,7 @@ class BattleshipGame:
                 self.playerBoard[row + i][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="gray")
                 self.player_ships[row + i][col] = True
         self.cycle_ship()
-        
+
     def cycle_ship(self):
         # Cycle through ships in self.ships
         if self.current_ship_index < len(self.ships) - 1:
@@ -152,13 +151,14 @@ class BattleshipGame:
                 col = random.randint(0, self.boardSize - 1)
                 direction = random.choice(["horizontal", "vertical"])
                 if self.can_place_ship(row, col, ship_size, is_player=False):
-                    if direction == "horizontal":
+                    if direction == "horizontal" and col + ship_size <= self.boardSize:
                         for i in range(ship_size):
                             self.enemy_ships[row][col + i] = True
-                    else:  # vertical
+                    elif direction == "vertical" and row + ship_size <= self.boardSize:
                         for i in range(ship_size):
                             self.enemy_ships[row + i][col] = True
                     placed = True
+
 
     def fire_shot(self, row, col):
         # Placeholder for firing shot logic
@@ -168,13 +168,6 @@ class BattleshipGame:
         else:
             # Miss
             self.opponentBoard[row][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="blue")
-
-#     def cellClicked(self, row, col, board):
-#         cell = board.grid_slaves(row=row + 2, column=col + 1)[0]
-#         canvas = cell.winfo_children()[0]
-#         canvas.create_rectangle(0, 0, self.cellSize, self.cellSize, fill="red")
-#         cell.unbind("<Button-1>")
-#         self.switch_turn()
 
     def switch_turn(self):
         self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"

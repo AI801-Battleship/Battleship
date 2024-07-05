@@ -85,7 +85,7 @@ class BattleshipGame:
                 canvas.bind("<Button-1>", partial(self.cellClicked, row, col, label))
                 row_cells.append(canvas)
             if label == "Player":
-                self.playe_board.append(row_cells)
+                self.player_board.append(row_cells)
             else:
                 self.opponent_board.append(row_cells)
 
@@ -194,23 +194,28 @@ class BattleshipGame:
                     self.display_winner("Player")
             else:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
         else:
             if self.player_ships[row][col]:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
-                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.getBoardLabel(row, col)}")
+                #self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
+                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
                 # Decrease player's ship count
                 self.player_ship_count -= 1
+
+                # Check if ship was sunk
+                self.player_ship_hits[self.player_ships[row][col]] -= 1
+                if self.player_ship_hits[self.player_ships[row][col]] == 0:
+                    self.sink_ship(self.player_ships[row][col], self.player_board, self.player_ships)
 
                 # Check if player has no ships left
                 if self.player_ship_count == 0:
                     self.display_winner("Opponent")
             else:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.getBoardLabel(row, col)}")
+                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
     def sink_ship(self, ship_id, board, ships):

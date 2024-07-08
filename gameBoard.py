@@ -2,7 +2,7 @@ import tkinter as tk
 import random
 from functools import partial  # Import functools.partial
 
-from legend import Legend
+from legend import Legend  # Assuming this is your custom Legend class
 
 
 class BattleshipGame:
@@ -24,8 +24,6 @@ class BattleshipGame:
         self.ships = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
         self.current_ship_index = 0  # Index to track the current ship being placed
         self.current_ship = self.ships[self.current_ship_index]
-        self.current_ship_label = tk.Label(root, text='Currently Placing: ' + self.current_ship)
-        self.current_ship_label.grid(row=self.board_size + 2, column=0, columnspan=self.board_size + 1, pady=10)
 
         # Lists to store locations of player and enemy ships
         self.player_ships = [[False]*self.board_size for _ in range(self.board_size)]
@@ -36,18 +34,29 @@ class BattleshipGame:
         # Store ships' remaining hits
         self.player_ship_hits = {}
         self.enemy_ship_hits = {}
-
-        # Place enemy ships - currently just set to randomly place them
-        self.place_enemy_ships()
+        # Entry widget for inputting coordinates
+        self.coordinate_entry = tk.Entry(root)
+        self.coordinate_entry.grid(row=self.board_size + 1, column=0, columnspan=self.board_size, pady=10, sticky=tk.W)
 
         # Add direction button so user knows which way ship will be placed
         self.ship_direction = 'horizontal'
         self.direction_button = tk.Button(root, text='Current Direction: ' + self.ship_direction, command=self.change_direction)
-        self.direction_button.grid(row=self.board_size + 2, column=self.board_size + 2, pady=10)
+        self.direction_button.grid(row=self.board_size + 1, column=self.board_size, pady=10)
 
-        # Add label when a ship is sunk
-        self.ship_sunk_label = tk.Label(root, text='')
-        self.ship_sunk_label.grid(row=self.board_size + 2, column=1, columnspan=4, pady=10)
+        # Button for placing ships
+        self.place_ship_button = tk.Button(root, text="Place Ship: "+self.current_ship, command=self.place_ship_from_entry)
+        self.place_ship_button.grid(row=self.board_size + 1, column=self.board_size + 1, pady=10)
+
+        # Button for firing shots
+        self.fire_shot_button = tk.Button(root, text="Fire Shot", command=self.fire_shot_from_entry)
+        self.fire_shot_button.grid(row=self.board_size + 1, column=self.board_size + 2, pady=10)
+
+        # Message bar to display game messages
+        self.message_bar = tk.Label(root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.message_bar.grid(row=self.board_size + 2, column=0, columnspan=self.board_size + 3, padx=5, pady=10, sticky=tk.W+tk.E)
+
+
+
 
         # Game Phase (False = placement phase, true = gameplay phase)
         self.game_phase = False
@@ -81,26 +90,11 @@ class BattleshipGame:
                     fill="white"
                 )
 
-                # Use functools.partial to bind the event with specific row, col, and board label
-                canvas.bind("<Button-1>", partial(self.cellClicked, row, col, label))
                 row_cells.append(canvas)
             if label == "Player":
                 self.player_board.append(row_cells)
             else:
                 self.opponent_board.append(row_cells)
-
-    def cellClicked(self, row, col, board_label, event):
-        if self.game_phase == False:
-            # Placement phase logic
-            if board_label == "Player":
-                ship_size = self.get_ship_size(self.current_ship)
-                if self.can_place_ship(row, col, ship_size):
-                    self.place_ship(row, col, ship_size)
-        else:
-            # Gameplay phase logic
-            if board_label == "Opponent":
-                # Handle firing shots at opponent's board
-                self.fire_shot(row, col)
 
     def get_ship_size(self, ship_name):
         # Returns the size of the ship based on its name
@@ -112,6 +106,26 @@ class BattleshipGame:
             "Destroyer": 2
         }
         return ship_sizes.get(ship_name, 0)
+    
+    def place_ship_from_entry(self):
+        coordinate = self.coordinate_entry.get().upper()  # Get coordinate from entry and convert to uppercase
+
+        if len(coordinate) < 2 or not coordinate[0].isalpha() or not coordinate[1:].isdigit():
+            # Invalid coordinate format, handle error (e.g., show message)
+            self.update_message("Invalid coordinate format. Please enter a valid coordinate (e.g., A1).")
+            return
+
+        row = ord(coordinate[0]) - ord('A')
+        col = int(coordinate[1:]) - 1
+
+        if self.current_ship_index is not None:
+            ship_size = self.get_ship_size(self.current_ship)
+            if self.can_place_ship(row, col, ship_size):
+                self.place_ship(row, col, ship_size)
+            else:
+                self.update_message(f"Cannot place {self.current_ship} at {coordinate}. Try again.")
+        else:
+            self.update_message("All ships placed. Cannot place more ships.")
 
     def can_place_ship(self, row, col, ship_size, is_player=True):
         # Check if the ship can be placed without overlapping or going out of bounds
@@ -145,10 +159,10 @@ class BattleshipGame:
         if self.current_ship_index < len(self.ships) - 1:
             self.current_ship_index += 1
             self.current_ship = self.ships[self.current_ship_index]
-            self.current_ship_label.config(text='Currently Placing: ' + self.current_ship)
+            self.place_ship_button.config(text='Place Ship: ' + self.current_ship)
         else:
             self.current_ship_index = None
-            self.current_ship_label.config(text="All Ships Placed!")
+            self.update_message("All ships placed!")
             self.game_phase = True
 
     def change_direction(self):
@@ -173,23 +187,34 @@ class BattleshipGame:
                     self.enemy_ship_hits[ship_name] = ship_size
                     placed = True
 
+    def fire_shot_from_entry(self):
+        coordinate = self.coordinate_entry.get().upper()  # Get coordinate from entry and convert to uppercase
+
+        if len(coordinate) < 2 or not coordinate[0].isalpha() or not coordinate[1:].isdigit():
+            # Invalid coordinate format, handle error (e.g., show message)
+            self.update_message("Invalid coordinate format. Please enter a valid coordinate (e.g., A1).")
+            return
+
+        row = ord(coordinate[0]) - ord('A')
+        col = int(coordinate[1:]) - 1
+
+        if self.game_phase:
+            self.fire_shot(row, col)
+        else:
+            self.update_message("Gameplay phase has not started yet.")
 
     def fire_shot(self, row, col):
-        self.ship_sunk_label.config(text='')
+        self.update_message('')
         if self.current_turn == "Player":
             if self.enemy_ships[row][col]:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                # self.enemy_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
                 self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
-                # Decrease opponent's ship count
                 self.enemy_ship_count -= 1
 
-                # Check if ship was sunk
                 self.enemy_ship_hits[self.enemy_ships[row][col]] -= 1
                 if self.enemy_ship_hits[self.enemy_ships[row][col]] == 0:
                     self.sink_ship(self.enemy_ships[row][col], self.opponent_board, self.enemy_ships)
 
-                # Check if opponent has no ships left
                 if self.enemy_ship_count == 0:
                     self.display_winner("Player")
             else:
@@ -200,17 +225,13 @@ class BattleshipGame:
         else:
             if self.player_ships[row][col]:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                #self.player_ships[row][col] = False  # Mark the ship as hit (assuming ships can't be hit twice)
                 self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
-                # Decrease player's ship count
                 self.player_ship_count -= 1
 
-                # Check if ship was sunk
                 self.player_ship_hits[self.player_ships[row][col]] -= 1
                 if self.player_ship_hits[self.player_ships[row][col]] == 0:
                     self.sink_ship(self.player_ships[row][col], self.player_board, self.player_ships)
 
-                # Check if player has no ships left
                 if self.player_ship_count == 0:
                     self.display_winner("Opponent")
             else:
@@ -223,7 +244,7 @@ class BattleshipGame:
             for col in range(self.board_size):
                 if ships[row][col] == ship_id:
                     board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="blue")
-        self.ship_sunk_label.config(text=ship_id + ' sunk!')
+        self.update_message(ship_id + ' sunk!')
 
     def get_board_label(self, row, col):
         label_row = chr(65 + row)
@@ -234,17 +255,17 @@ class BattleshipGame:
         self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"
         self.legend.update_turn(self.current_turn)
         if self.current_turn == "Opponent":
-            #Placeholder ai Logic
             row = random.randint(0, self.board_size - 1)
             col = random.randint(0, self.board_size - 1)
             self.fire_shot(row, col)
-    def display_winner(self, winner):
-        # Disable further gameplay
-        self.game_phase = None
 
-        # Display winner message
+    def display_winner(self, winner):
+        self.game_phase = None
         winner_label = tk.Label(self.root, text=f"{winner} wins!", font=("Helvetica", 24), fg="green")
         winner_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+    def update_message(self, message):
+        self.message_bar.config(text=message)
 
 
 if __name__ == "__main__":

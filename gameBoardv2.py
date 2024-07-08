@@ -6,17 +6,19 @@ class BattleshipGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Battleship Game")
-        # Initial Board Setup
-        self.boardSize = 10
-        self.cellSize = 30
-        self.player_1 = self.createBoard("Player 1", 0, "lightcoral")
-        self.player_2 = self.createBoard("Player 2", self.boardSize * self.cellSize + 60, "lightblue")
-
         # Game Information
         self.gamePhase = "Placement"
         self.current_player = random.choice(["Player 1", "Player 2"])
         self.current_placement_direction = 'Horizontal'
         self.current_ship = "Carrier"  # Start with the Carrier
+        # Initial Board Setup
+        self.boardSize = 10
+        self.cellSize = 30
+        self.player_1 = []
+        self.player_2 = []
+        self.createBoard("Player 1", 0, "lightcoral")
+        self.createBoard("Player 2", self.boardSize * self.cellSize + 60, "lightblue")
+
         
         # Ship Information - Dictionary containing lists which will hold ship locations
         self.player1_ships ={
@@ -72,7 +74,10 @@ class BattleshipGame:
                     fill="white"
                 )
                 rowCells.append(canvas)
-        return rowCells
+        if self.current_player == "Player 1":
+            self.player_1.append(rowCells)
+        else:
+            self.player_2.append(rowCells)
 
     def place_ship_from_entry(self):
         coordinate = self.coordinate_entry.get().upper()  # Get coordinate from entry and convert to uppercase
@@ -84,7 +89,7 @@ class BattleshipGame:
 
         row = ord(coordinate[0]) - ord('A')
         col = int(coordinate[1:]) - 1
-        
+
         if self.isValidPlacement(row, col):
             self.placeShip(row, col)
             self.message_box.config(text=f"Placed {self.current_ship} at {coordinate}.")
@@ -112,6 +117,7 @@ class BattleshipGame:
         else:
             ships = self.player2_ships
         
+        potential_positions = []
         # Horizontal orientation:
         if self.current_placement_direction == "Horizontal":
             # Out of Bounds check
@@ -119,8 +125,7 @@ class BattleshipGame:
                 return False
             # Check for overlap with existing ships
             for i in range(ship_size):
-                if ships[self.current_ship] and (row, col + i) in ships[self.current_ship]:
-                    return False
+                potential_positions.append((row, col + i))
         # Vertical orientation:
         elif self.current_placement_direction == "Vertical":
             # Out of bounds check
@@ -128,9 +133,13 @@ class BattleshipGame:
                 return False
             # Check for overlap with existing ships
             for i in range(ship_size):
-                if ships[self.current_ship] and (row + i, col) in ships[self.current_ship]:
+                potential_positions.append((row + i, col))
+
+        # Check for overlap with all ships in the current player's fleet
+        for ship_name, ship_positions in ships.items():
+            for pos in potential_positions:
+                if pos in ship_positions:
                     return False
-        
         return True
 
     def placeShip(self, row, col):
@@ -146,12 +155,13 @@ class BattleshipGame:
         
         if self.current_placement_direction == "Horizontal":
             for i in range(ship_size):
-                board[row][col + i].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
-                ships[current_ship].append((row, col + i))
+                self.player_1[row][col + i].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="gray")
+                ships[self.current_ship].append((row, col + i))
         elif self.current_placement_direction == "Vertical":
             for i in range(ship_size):
-                board[row + i][col].create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
-                ships[current_ship].append((row + i, col))
+                canvas = board[row + i][col]
+                canvas.create_rectangle(0, 0, self.cellSize, self.cellSize, fill="black")
+                ships[self.current_ship].append((row + i, col))
 
     def next_ship_to_place(self):
         # Cycle to the next ship to be placed

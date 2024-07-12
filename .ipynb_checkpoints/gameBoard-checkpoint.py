@@ -49,8 +49,9 @@ class BattleshipGame:
 
         # Button for firing shots
         self.fire_shot_button = tk.Button(root, text="Fire Shot", command=self.fire_shot_from_entry)
-        self.fire_shot_button.grid(row=self.board_size + 1, column=self.board_size + 2, pady=10)
-
+        self.fire_shot_button.grid(row=self.board_size + 1, column=self.board_size, pady=10)
+        self.fire_shot_button.grid_remove()
+        
         # Message bar to display game messages
         self.message_bar = tk.Label(root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.message_bar.grid(row=self.board_size + 2, column=0, columnspan=self.board_size + 3, padx=5, pady=10, sticky=tk.W+tk.E)
@@ -164,6 +165,9 @@ class BattleshipGame:
             self.current_ship_index = None
             self.update_message("All ships placed!")
             self.game_phase = True
+            self.place_ship_button.grid_remove()
+            self.direction_button.grid_remove()
+            self.fire_shot_button.grid(row=self.board_size + 1, column=self.board_size, pady=10)
 
     def change_direction(self):
         self.ship_direction = "vertical" if self.ship_direction == "horizontal" else "horizontal"

@@ -208,7 +208,7 @@ class BattleshipGame:
         if self.current_turn == "Player":
             if self.enemy_ships[row][col]:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
+                self.update_message(f'{self.current_turn} hit on {self.get_board_label(row, col)}')
                 self.enemy_ship_count -= 1
 
                 self.enemy_ship_hits[self.enemy_ships[row][col]] -= 1
@@ -219,13 +219,13 @@ class BattleshipGame:
                     self.display_winner("Player")
             else:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
+                self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
         else:
             if self.player_ships[row][col]:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                self.current_ship_label.config(text=f"{self.current_turn} hit on {self.get_board_label(row, col)}")
+                self.update_message(f"{self.current_turn} hit on {self.get_board_label(row, col)}")
                 self.player_ship_count -= 1
 
                 self.player_ship_hits[self.player_ships[row][col]] -= 1
@@ -236,7 +236,7 @@ class BattleshipGame:
                     self.display_winner("Opponent")
             else:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
-                self.current_ship_label.config(text=f"{self.current_turn} miss on {self.get_board_label(row, col)}")
+                self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn()
 
     def sink_ship(self, ship_id, board, ships):

@@ -131,7 +131,7 @@ class BattleshipGame:
     def can_place_ship(self, row, col, ship_size, is_player=True):
         # Check if the ship can be placed without overlapping or going out of bounds
         board = self.player_ships if is_player else self.enemy_ships
-        if self.current_ship_index is not None:
+        if self.current_ship_index is not None or not is_player:
             if self.ship_direction == "horizontal":
                 if col + ship_size > self.board_size:
                     return False
@@ -164,6 +164,7 @@ class BattleshipGame:
         else:
             self.current_ship_index = None
             self.update_message("All ships placed!")
+            self.place_enemy_ships()
             self.game_phase = True
             self.place_ship_button.grid_remove()
             self.direction_button.grid_remove()
@@ -221,10 +222,12 @@ class BattleshipGame:
 
                 if self.enemy_ship_count == 0:
                     self.display_winner("Player")
+                else:
+                    self.switch_turn(hit=True)
             else:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
-                self.switch_turn()
+                self.switch_turn(hit=False)
 
         else:
             if self.player_ships[row][col]:
@@ -238,10 +241,12 @@ class BattleshipGame:
 
                 if self.player_ship_count == 0:
                     self.display_winner("Opponent")
+                else:
+                    self.switch_turn(hit=True)
             else:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
-                self.switch_turn()
+                self.switch_turn(hit=False)
 
     def sink_ship(self, ship_id, board, ships):
         for row in range(self.board_size):
@@ -255,8 +260,9 @@ class BattleshipGame:
         label_col = str(col + 1)
         return f"{label_row}{label_col}"
         
-    def switch_turn(self):
-        self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"
+    def switch_turn(self, hit):
+        if (not hit):
+            self.current_turn = "Opponent" if self.current_turn == "Player" else "Player"
         self.legend.update_turn(self.current_turn)
         if self.current_turn == "Opponent":
             row = random.randint(0, self.board_size - 1)

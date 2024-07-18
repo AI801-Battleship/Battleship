@@ -212,6 +212,11 @@ class BattleshipGame:
         self.update_message('')
         if self.current_turn == "Player":
             if self.enemy_ships[row][col]:
+                if self.enemy_ships[row][col] == 1:
+                    self.update_message('Already guessed. Try another spot')
+                    self.switch_turn(True)
+                    return
+
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
                 self.update_message(f'{self.current_turn} hit on {self.get_board_label(row, col)}')
                 self.enemy_ship_count -= 1
@@ -228,9 +233,15 @@ class BattleshipGame:
                 self.opponent_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn(hit=False)
+            
+            self.enemy_ships[row][col] = 1
 
         else:
             if self.player_ships[row][col]:
+                if self.enemy_ships[row][col] == 1:
+                    self.switch_turn(True)
+                    return
+                
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
                 self.update_message(f"{self.current_turn} hit on {self.get_board_label(row, col)}")
                 self.player_ship_count -= 1
@@ -247,6 +258,8 @@ class BattleshipGame:
                 self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn(hit=False)
+
+            self.player_board[row][col] = 1
 
     def sink_ship(self, ship_id, board, ships):
         for row in range(self.board_size):

@@ -5,6 +5,7 @@
 import random
 from random_ai import random_ai
 from exploratory_local_search_ai import exploratory_local_search_ai
+from probabilistic_ai import probabilistic_ai
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -97,7 +98,7 @@ results = []
 
 # Run the function 100 times
 for _ in range(100):
-    result = play_solo_board(exploratory_local_search_ai)
+    result = play_solo_board(probabilistic_ai)
     results.append(result)
 average_result = np.mean(results)
 

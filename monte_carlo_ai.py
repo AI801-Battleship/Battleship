@@ -11,13 +11,17 @@ class MonteCarloAI:
         counter = 0
 
         while self.check_ships_remaining(board_copy):
+            # Use heuristic to generate a guess
             guess = self.heuristic_guess(previous_info_copy)
             row, col = self.convert_to_RC(guess)
             
+            # Check for hits
             if board_copy[row][col] != '.':     
                 ship_hit = board_copy[row][col]
                 board_copy[row][col] = '.'  
                 sink = True
+
+                # See if ship was sunk
                 for r in range(len(board_copy)):
                     if any(board_copy[r][c] == ship_hit for c in range(len(board_copy))):
                         sink = False
@@ -32,6 +36,7 @@ class MonteCarloAI:
         
         return counter
 
+    # Find a random guess to test against
     def random_guess(self, board, previous_info):
         size = len(board)
         unexplored = [(row, col) for row in range(size) for col in range(size) if f"{chr(row + ord('A'))}{col + 1}" not in previous_info]
@@ -45,6 +50,7 @@ class MonteCarloAI:
                 if coordinate not in previous_info:
                     return coordinate
 
+    # Use heuristic to generate a guess
     def heuristic_guess(self, previous_info):
         size = len(previous_info)
         most_likely = [f"{chr(r + ord('A'))}{c + 1}" for r in range(size) for c in range(size)]
@@ -67,6 +73,7 @@ class MonteCarloAI:
         best_move = None
         best_result = float('inf')
         
+        # Check random guess against heuristic guess and return better move based on simulations
         for _ in range(self.simulations):
             board_copy = [['.' for _ in range(board_size)] for _ in range(board_size)]
             move = self.random_guess(board_copy, previous_info)

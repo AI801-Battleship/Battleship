@@ -6,6 +6,7 @@ import random
 from random_ai import random_ai
 from exploratory_local_search_ai import exploratory_local_search_ai
 from probabilistic_ai import probabilistic_ai
+from monte_carlo_ai import MonteCarloAI
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -96,9 +97,11 @@ def play_solo_board(ai_model, board_size=10):
 
 results = []
 
+monte_carlo_ai_model = MonteCarloAI(simulations=100)
+
 # Run the function 100 times
 for _ in range(100):
-    result = play_solo_board(probabilistic_ai)
+    result = play_solo_board(monte_carlo_ai_model.choose_move)
     results.append(result)
 average_result = np.mean(results)
 

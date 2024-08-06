@@ -56,8 +56,8 @@ class BattleshipGame:
         self.message_bar = tk.Label(root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.message_bar.grid(row=self.board_size + 2, column=0, columnspan=self.board_size + 3, padx=5, pady=10, sticky=tk.W+tk.E)
 
-
-
+        self.player_shots = {}
+        self.opponent_shots = {}
 
         # Game Phase (False = placement phase, true = gameplay phase)
         self.game_phase = False
@@ -210,9 +210,10 @@ class BattleshipGame:
 
     def fire_shot(self, row, col):
         self.update_message('')
+        guess = str(row) + str(col)
         if self.current_turn == "Player":
             if self.enemy_ships[row][col]:
-                if self.enemy_ships[row][col] == 1:
+                if guess in self.player_shots.keys():
                     self.update_message('Already guessed. Try another spot')
                     self.switch_turn(True)
                     return
@@ -234,11 +235,11 @@ class BattleshipGame:
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn(hit=False)
             
-            self.enemy_ships[row][col] = 1
+            self.player_shots[guess] = ['guessed']
 
         else:
             if self.player_ships[row][col]:
-                if self.enemy_ships[row][col] == 1:
+                if guess in self.opponent_shots.keys():
                     self.switch_turn(True)
                     return
                 
@@ -259,7 +260,7 @@ class BattleshipGame:
                 self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
                 self.switch_turn(hit=False)
 
-            self.player_board[row][col] = 1
+            self.opponent_shots[guess] = ['guessed']
 
     def sink_ship(self, ship_id, board, ships):
         for row in range(self.board_size):

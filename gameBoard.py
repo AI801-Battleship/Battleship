@@ -1,7 +1,7 @@
 import tkinter as tk
 import random
 from functools import partial  # Import functools.partial
-
+from probabilistic_ai import probabilistic_ai
 from legend import Legend  # Assuming this is your custom Legend class
 
 
@@ -34,6 +34,7 @@ class BattleshipGame:
         # Store ships' remaining hits
         self.player_ship_hits = {}
         self.enemy_ship_hits = {}
+
         # Entry widget for inputting coordinates
         self.coordinate_entry = tk.Entry(root)
         self.coordinate_entry.grid(row=self.board_size + 1, column=0, columnspan=self.board_size, pady=10, sticky=tk.W)
@@ -62,8 +63,10 @@ class BattleshipGame:
         # Game Phase (False = placement phase, true = gameplay phase)
         self.game_phase = False
         
-        
         self.legend = Legend(self.root, x_offset=2)
+
+        # Initialize opponent's information
+        self.opponent_info = {}  # Stores the opponent's shot history and results
 
     def create_board(self, label, x_offset, color):
         board_frame = tk.Frame(self.root, bg=color)
@@ -238,29 +241,38 @@ class BattleshipGame:
             self.player_shots[guess] = ['guessed']
 
         else:
-            if self.player_ships[row][col]:
-                if guess in self.opponent_shots.keys():
+            # Use probabilistic AI to determine opponent's shot
+            next_guess = probabilistic_ai(self.opponent_info, board_size=self.board_size)
+            opponent_row, opponent_col = ord(next_guess[0]) - ord('A'), int(next_guess[1:]) - 1
+
+            if self.player_ships[opponent_row][opponent_col]:
+                if next_guess in self.opponent_shots.keys():
                     self.switch_turn(True)
                     return
                 
-                self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
-                self.update_message(f"{self.current_turn} hit on {self.get_board_label(row, col)}")
+                self.player_board[opponent_row][opponent_col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="red")
+                self.update_message(f"{self.current_turn} hit on {self.get_board_label(opponent_row, opponent_col)}")
                 self.player_ship_count -= 1
 
-                self.player_ship_hits[self.player_ships[row][col]] -= 1
-                if self.player_ship_hits[self.player_ships[row][col]] == 0:
-                    self.sink_ship(self.player_ships[row][col], self.player_board, self.player_ships)
+                ship_name = self.player_ships[opponent_row][opponent_col]
+                self.player_ship_hits[ship_name] -= 1
+                if self.player_ship_hits[ship_name] == 0:
+                    self.sink_ship(ship_name, self.player_board, self.player_ships)
+                    self.opponent_info[next_guess] = ['sunk', ship_name]
+                else:
+                    self.opponent_info[next_guess] = ['hit', ship_name]
 
                 if self.player_ship_count == 0:
                     self.display_winner("Opponent")
                 else:
                     self.switch_turn(hit=True)
             else:
-                self.player_board[row][col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
-                self.update_message(f"{self.current_turn} miss on {self.get_board_label(row, col)}")
+                self.player_board[opponent_row][opponent_col].create_rectangle(0, 0, self.cell_size, self.cell_size, fill="white")
+                self.update_message(f"{self.current_turn} miss on {self.get_board_label(opponent_row, opponent_col)}")
+                self.opponent_info[next_guess] = ['miss']
                 self.switch_turn(hit=False)
 
-            self.opponent_shots[guess] = ['guessed']
+            self.opponent_shots[next_guess] = ['guessed']
 
     def sink_ship(self, ship_id, board, ships):
         for row in range(self.board_size):

@@ -2,6 +2,9 @@ import tkinter as tk
 import random
 from functools import partial  # Import functools.partial
 from probabilistic_ai import probabilistic_ai
+from monte_carlo_ai import MonteCarloAI
+from exploratory_local_search_ai import exploratory_local_search_ai
+from random_ai import random_ai
 from legend import Legend  # Assuming this is your custom Legend class
 
 
